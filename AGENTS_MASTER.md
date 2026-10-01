@@ -726,17 +726,19 @@ Avoid:
 
 ## 29. MARKET-CURRENT OPERATING PRINCIPLES
 
-The current AI/software market rewards products that convert AI capability into measurable workflow outcomes, not generic AI presence.
+The current AI/software market rewards products that convert AI capability into measurable workflow outcomes, not generic AI presence. 2026 evidence also shows that agentic coding is making software creation itself cheaper and more substitutable, which raises the bar for differentiation: durable value must come from domain workflow, trusted outcomes, distribution, proprietary learning/assets, governance, integration and measurable economics.
 
 Therefore:
 
 - favor vertical, domain-specific workflows with measurable outcomes over generic AI wrappers;
-- track business/product KPIs, not only model/technical metrics;
-- redesign the workflow when necessary instead of simply inserting AI into an unchanged process;
-- make trust, governance and reliability part of the product when buyers require them;
+- track business/product KPIs and ROI, not only model/technical metrics;
+- redesign the end-to-end workflow when necessary instead of simply inserting AI into an unchanged process;
+- make verification, trust, governance and reliability part of the product when buyers require them;
 - prioritize fast customer value and distribution alongside development speed;
-- treat inference/API/model cost as part of product economics;
-- use agentic automation where it materially removes human work and can be safely bounded.
+- treat inference/API/model cost, human review, monitoring and failure handling as total-cost-of-ownership inputs;
+- use agentic automation where it materially removes human work and can be safely bounded;
+- assume generic coding capability will commoditize quickly: compete on usable outcomes, domain fit, evidence, integration and acquisition rather than code generation alone;
+- scale only workflows whose value and economics can be measured.
 
 These principles guide hypotheses; actual project decisions require project-specific evidence.
 
@@ -781,6 +783,18 @@ Only then should the work be considered complete enough to advance.
 ## 31. EXTERNAL MARKET REFERENCES
 
 These sources inform the market-current principles above; they are benchmarks and context, not substitutes for project-specific evidence.
+
+- McKinsey & Company, *The state of AI in 2026: On the road to ROI* (2026): agentic AI and coding-agent use are scaling, while organizations are increasingly confronting ROI and AI-cost questions; reported internal-build substitution reinforces that generic software features can become easier to reproduce.  
+  https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai
+
+- McKinsey & Company, *Where AI agents pay off: A practical guide to the economics of agentic workflows* (2026): emphasizes high-value repeatable workflows and total cost of ownership rather than token cost alone.  
+  https://www.mckinsey.com/capabilities/quantumblack/our-insights/where-ai-agents-pay-off-a-practical-guide-to-the-economics-of-agentic-workflows
+
+- McKinsey & Company, *Beyond the copilot: Scaling the agentic product development life cycle* (2026): reports uneven software-development impact and highlights operating-model redesign, verification mechanisms and AI operations as differentiators.  
+  https://www.mckinsey.com/industries/technology-media-and-telecommunications/our-insights/beyond-the-copilot-scaling-the-agentic-product-development-life-cycle
+
+- McKinsey & Company, *McKinsey Global Tech Agenda 2026* (2026): connects agentic automation and product/platform operating models with measurable business value and growth-oriented technology strategy.  
+  https://www.mckinsey.com/capabilities/mckinsey-technology/our-insights/mckinsey-global-tech-agenda-2026
 
 - McKinsey & Company, *The state of AI: How organizations are rewiring to capture value* (2025): workflow redesign and KPI tracking are associated with stronger reported value capture; widespread AI use still often lacks enterprise-level EBIT impact.  
   https://www.mckinsey.com/capabilities/quantumblack/our-insights/the-state-of-ai-how-organizations-are-rewiring-to-capture-value
