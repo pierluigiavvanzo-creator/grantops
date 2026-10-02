@@ -1,7 +1,7 @@
 # AGENTS_MASTER.md — PROJECT & PRODUCT OPERATING SYSTEM v2
 
-**Version:** 2.0  
-**Date:** 2026-10-01  
+**Version:** 2.1  
+**Date:** 2026-10-02  
 **Scope:** common governance for all AI/software projects  
 **Owner:** Product Owner  
 **Status:** canonical shared operating standard
@@ -245,6 +245,134 @@ Decision rule:
 - if it exists and fits → **REUSE**;
 - if it partially fits → **ADAPT**;
 - if it is missing → **BUILD ONLY THE MISSING PART**.
+
+---
+
+## 8A. ZERO-COST API / TOKEN FIRST — MANDATORY
+
+For MVP, experimentation and market validation, the default target is:
+
+> **EXTERNAL API / MODEL TOKEN VARIABLE COST = €0**
+
+unless the Product Owner has explicitly approved a paid dependency or spend.
+
+### Sourcing order
+
+Before introducing a paid API, hosted model, token-metered service, data provider or external capability, search in this order when practical:
+
+1. capability already available in the project;
+2. mature open-source or self-hosted solution;
+3. free public API;
+4. verified free tier suitable for the intended use;
+5. paid service only after explicit Product Owner approval.
+
+This rule complements **REUSE FIRST**. Do not build custom infrastructure merely to avoid a small cost if the resulting maintenance, security or operating burden destroys product/economic value. The goal is lowest credible total cost, not zero price at any cost.
+
+### Canonical API discovery source
+
+When an external API may be useful, include the APILayer dashboard among the canonical discovery sources:
+
+> **https://app.apilayer.com/dashboard**
+
+APILayer is a discovery/provider source, not an assumption that a specific API is free, open source, permanent, commercially usable or suitable.
+
+For every candidate API/provider, verify the current plan and terms before adoption.
+
+### Mandatory provider check
+
+For each material external API/model dependency, verify at least:
+
+- functional fit;
+- free-tier request/token allowance;
+- commercial-use eligibility;
+- license and terms of service;
+- credit-card requirement;
+- trial expiry;
+- automatic upgrade, pay-as-you-go or overage behavior;
+- rate limits and quota-reset behavior;
+- privacy, data retention and security implications;
+- reliability and maintenance;
+- integration and switching cost;
+- vendor lock-in;
+- fallback/substitution options;
+- expected variable cost at MVP and relevant scale.
+
+Unknown values must be recorded as **UNKNOWN**, not invented.
+
+### No-surprise-spend gate
+
+No agent may autonomously:
+
+- activate a paid API/model plan;
+- purchase API or model credits;
+- enable pay-as-you-go billing;
+- enable automatic top-ups/recharges;
+- enter billing information;
+- exceed a free quota when this can generate charges;
+- migrate from a free tier to a paid tier.
+
+Any such action requires explicit Product Owner approval scoped to that provider/service and spend.
+
+An existing account, stored payment method, previous approval for another provider, or silence does not constitute approval.
+
+### Quota behavior
+
+Where technically practical, configure:
+
+- hard usage limits;
+- billing disabled;
+- no automatic plan upgrade;
+- no automatic credit recharge;
+- quota/rate-limit monitoring;
+- graceful degradation;
+- a free/open-source fallback.
+
+Prefer:
+
+> **STOP / FALLBACK**
+
+over:
+
+> **AUTOMATIC PAID OVERAGE**
+
+A service does not qualify as zero-cost if normal quota exhaustion or trial expiration can silently create charges.
+
+### Provider abstraction
+
+When substitution materially protects economics, continuity or bargaining power, keep external providers behind an adapter/interface rather than coupling core domain logic directly to one proprietary SDK.
+
+Preferred pattern:
+
+> **product capability → provider adapter → free/open-source provider → free fallback → STOP**
+
+Do not create abstraction layers merely for hypothetical portability when they add more complexity than value.
+
+### Secrets
+
+API keys, model keys and tokens must never be committed to the repository.
+
+Use environment variables or an approved secret-management mechanism. Example:
+
+`APILAYER_API_KEY=<secret>`
+
+The real value must remain outside version-controlled source code.
+
+### Economic record
+
+For every material external provider used in a product path, progressively record:
+
+- free allowance;
+- current unit cost after the free allowance;
+- estimated cost at expected usage;
+- zero-cost/open-source substitute, if any;
+- switching cost;
+- commercial dependency risk.
+
+Decision rule:
+
+> **If a mature free/open-source option satisfies the real requirement with acceptable reliability, security, licensing and operating burden, use it before introducing paid API/token cost.**
+
+Paid external services are justified only when their measurable product/economic value exceeds the recurring cost and the Product Owner explicitly approves the spend.
 
 ---
 
