@@ -1,7 +1,7 @@
 # AGENTS_MASTER.md — PROJECT & PRODUCT OPERATING SYSTEM v2
 
-**Version:** 2.1  
-**Date:** 2026-10-02  
+**Version:** 2.2  
+**Date:** 2026-10-08  
 **Scope:** common governance for all AI/software projects  
 **Owner:** Product Owner  
 **Status:** canonical shared operating standard
@@ -938,4 +938,439 @@ These sources inform the market-current principles above; they are benchmarks an
 
 ---
 
-**END — AGENTS_MASTER.md v2.0**
+## 32. PERMANENT TOKEN SAVER MANDATE — ALL PROJECTS
+
+Adopted explicitly by the Product Owner on 2026-10-08 for all present and future projects. The complete mandate below is binding until explicitly superseded by the Product Owner. Its general rules apply to every project, overriding the source document's ForgeLab-only scope; section 22 and other ForgeLab-specific operational constraints remain specific to ForgeLab.
+
+Apply this mandate together with the existing governance and higher-priority instructions. For execution economy and default report format, this later explicit mandate supersedes conflicting defaults above. Never reduce correctness, security, required verification, product value or truthful reporting to save tokens. Reuse this embedded text when already loaded; no separate source-file retrieval is required.
+
+### Complete adopted source: FORGELAB_CODEX_TOKEN_SAVER_MANDATE_v1.md
+
+# FORGELAB — CODEX TOKEN SAVER MANDATE v1
+
+**Status:** Permanent operating mandate for Codex interventions on ForgeLab  
+**Scope:** all present and future Codex analysis, repair, hardening, review and maintenance work on code produced or modified through the ChatGPT/ForgeLab workflow  
+**Priority:** applies unless a stricter safety, legal, security or explicit Product Owner instruction overrides it
+
+## 1. Primary optimization function
+
+> **VERIFIED RESULT × PRODUCT VALUE / TOKENS × TOOL CALLS × PRODUCT OWNER TIME**
+
+Token saving must never reduce correctness, validation, security, evidence quality or product value. The target is **less waste, not less rigor**.
+
+## 2. Core execution rule
+
+Use the minimum sufficient context, minimum sufficient tool calls, minimum sufficient code change and minimum sufficient test set that still produces a trustworthy result.
+
+Preferred flow:
+
+```text
+VERIFY STATE
+  -> LOCATE EXACT FAILURE
+  -> READ ONLY RELEVANT CONTEXT
+  -> FORM ONE TESTABLE ROOT-CAUSE HYPOTHESIS
+  -> APPLY ONE BOUNDED FIX
+  -> RUN FOCUSED TESTS
+  -> EXPAND TESTING ONLY IF NEEDED
+  -> UPDATE ONLY MATERIAL PROJECT STATE
+  -> REPORT DELTA + EVIDENCE
+```
+
+Avoid:
+
+```text
+READ ENTIRE REPOSITORY
+  -> REPEAT EXISTING HISTORY
+  -> SPECULATE
+  -> REFACTOR BROADLY
+  -> RUN EVERYTHING REPEATEDLY
+  -> DUMP LARGE LOGS
+  -> WRITE LONG NARRATIVE
+```
+
+## 3. Evidence reuse first
+
+Before generating new evidence, reuse current verified evidence when still valid:
+
+- current Git branch and HEAD;
+- current failing test/error artifact;
+- current audit/handover;
+- existing regression for the same failure class;
+- accepted ADR/decision;
+- previously executed successful command whose inputs have not changed.
+
+Do not regenerate information already established and unchanged.
+
+## 4. Targeted retrieval first
+
+Prefer:
+
+- `git status`;
+- `git diff`;
+- `git log -1`;
+- `rg` / exact symbol search;
+- exact function/class/route lookup;
+- small line ranges;
+- related tests only.
+
+For large ForgeLab files, search the exact symbol first and inspect only the necessary range.
+
+Particularly:
+
+- `src/forgelab/orchestrator.py` (~5,900 lines);
+- `dashboard/app/page.tsx` (~3,400 lines);
+- `src/forgelab/api.py` (~1,700 lines);
+- large test modules.
+
+Full-file reading is justified only when local context is insufficient or the task is explicitly architectural.
+
+## 5. Read-once / cache-first rule
+
+Within one Codex task:
+
+- do not reread the same unchanged file without a concrete reason;
+- do not rerun the same successful command unless relevant code/environment changed;
+- do not repeat repository history already established in the task;
+- reuse captured SHA, branch, failure output and test evidence while valid.
+
+## 6. Delta-first repository analysis
+
+For a regression after a known change, use:
+
+```text
+current HEAD
+-> relevant commit/PR diff
+-> changed functions
+-> related tests
+-> adjacent contracts only if needed
+```
+
+Do not reconstruct the entire project from scratch for a bounded regression.
+
+## 7. Root-cause-first repair mandate
+
+Before changing code, identify:
+
+- observed failure;
+- exact execution path;
+- root-cause class;
+- violated invariant;
+- smallest complete repair that restores that invariant.
+
+Repair the **failure class**, not merely the last error string.
+
+At the same time, do not expand into unrelated cleanup.
+
+Rule:
+
+> **complete root-cause fix, minimal unrelated surface**
+
+## 8. One coherent change-set rule
+
+Prefer:
+
+- one branch;
+- one coherent change set;
+- one primary purpose;
+- one PR.
+
+Do not create a sequence of predictable micro-PRs for edge cases belonging to the same component when they can be handled in one bounded stabilization pass.
+
+Do not combine unrelated product areas merely to reduce PR count.
+
+## 9. No speculative refactor
+
+Do not spend tokens or engineering time on:
+
+- style-only rewrites;
+- broad abstraction cleanup;
+- renaming campaigns;
+- architecture changes without a proven blocker;
+- premature modularization;
+- speculative optimization.
+
+Refactor only when required to fix a proven defect safely, make the behavior testable, remove a demonstrated recurrence class, or when explicitly requested by the Product Owner.
+
+## 10. Progressive test economy
+
+Use this ladder:
+
+### T0 — static/local invariant
+
+Examples: syntax, import, schema, exact flag, exact SHA.
+
+### T1 — focused regression
+
+Run the exact test reproducing the issue.
+
+### T2 — component suite
+
+Run the relevant test file/module.
+
+### T3 — integration slice
+
+Run the smallest affected end-to-end path.
+
+### T4 — release/Golden Path gate
+
+Run only when release-level confidence is required.
+
+Do not start with T4 for every change. Run T4 after the candidate is stable.
+
+## 11. Failure-output compression
+
+When a command fails, capture/report only what is needed to identify the failure:
+
+- failing test name;
+- exception type;
+- relevant stack frames;
+- assertion diff;
+- exit code;
+- affected file/function.
+
+Avoid returning thousands of unchanged log lines or complete successful test output.
+
+If a long log is necessary, save it as an artifact and summarize the diagnostic lines.
+
+## 12. Tool-call economy
+
+Every tool call must have a specific purpose:
+
+- verify;
+- locate;
+- compare;
+- reproduce;
+- modify;
+- test;
+- record.
+
+Avoid vague exploratory calls.
+
+Prefer combining independent lightweight lookups when safe.
+
+Do not repeat repository/network lookups for facts already verified in the same task.
+
+## 13. External research economy
+
+Use external research only when the decision depends on current/version-specific:
+
+- third-party behavior;
+- CLI/API documentation;
+- license/terms;
+- security behavior not established locally.
+
+For pinned dependencies, prefer documentation/source for the pinned version.
+
+Do not benchmark unrelated alternatives during a bounded repair if the current component remains viable.
+
+## 14. Source-of-truth hierarchy
+
+Use:
+
+1. actual repository/Git state;
+2. executed test/runtime evidence;
+3. accepted governance/ADRs;
+4. current canonical project-state files;
+5. audits/handovers;
+6. chat history.
+
+If docs conflict with Git or executed evidence, trust Git/evidence and update stale docs. Do not spend tokens reconciling the conflict by speculation.
+
+## 15. Reporting compression
+
+Default final report:
+
+### RESULT
+What is now true.
+
+### EVIDENCE
+Commands/tests and outcomes.
+
+### CHANGES
+Files changed and why.
+
+### BLOCKER
+Only if one exists.
+
+### NEXT ACTION
+Exactly one.
+
+Do not retell the entire project history unless explicitly asked.
+
+## 16. No chain-of-thought narration
+
+Do not spend output tokens narrating private reasoning step by step.
+
+Provide conclusions, evidence, root cause, decision, changed files, test results and residual risk.
+
+## 17. Patch economy
+
+Prefer:
+
+- modifying only affected functions;
+- reusing existing helpers;
+- extending existing tests;
+- removing obsolete special-case code when a root-cause repair makes it redundant.
+
+Avoid:
+
+- duplicate helpers;
+- parallel recovery paths;
+- one-use abstractions without clear value;
+- dependencies for functionality already available.
+
+## 18. Dependency economy
+
+Before adding any dependency:
+
+1. verify capability is not already present;
+2. verify standard library/framework cannot solve it;
+3. verify integration value exceeds complexity;
+4. verify license/security/cost;
+5. obtain Product Owner approval for paid services.
+
+## 19. Context tiers
+
+### HOT CONTEXT — load first
+
+- current task;
+- current failure evidence;
+- current branch/HEAD;
+- affected files;
+- affected tests;
+- binding constraints.
+
+### WARM CONTEXT — load only if needed
+
+- adjacent architecture;
+- related ADR;
+- previous relevant failure;
+- provider/tool contract.
+
+### COLD CONTEXT — do not load by default
+
+- unrelated history;
+- unrelated old PRs;
+- unrelated product ideas;
+- full documentation archives;
+- frozen architecture branches.
+
+## 20. Stop conditions
+
+### SUCCESS STOP
+
+Stop when:
+
+- requested behavior works;
+- focused regression passes;
+- required integration gate passes;
+- no known critical regression remains;
+- evidence is sufficient.
+
+Then report and stop.
+
+### BLOCKER STOP
+
+Stop when:
+
+- Product Owner approval is required;
+- required environment is unavailable;
+- external condition cannot be verified;
+- repair would cross architecture/security/cost boundary;
+- evidence contradicts the requested assumption.
+
+Report one blocker and one next action.
+
+Do not consume more tokens exploring unrelated alternatives.
+
+## 21. Escalation rule
+
+Expand context/tokens only when:
+
+- the focused repair fails;
+- multiple components are demonstrably involved;
+- security/data-integrity risk requires broader analysis;
+- tests show a systemic regression;
+- the Product Owner explicitly requests a comprehensive audit.
+
+Every expansion must answer:
+
+> **What specific unresolved uncertainty will this additional token/tool/test cost resolve?**
+
+If there is no concrete answer, skip it.
+
+## 22. ForgeLab-specific repair order
+
+Default order:
+
+```text
+1. verify main/HEAD
+2. read current gate + affected component only
+3. reproduce focused failure
+4. inspect exact Aider/API/dashboard path
+5. repair root-cause class
+6. run focused regression
+7. run component suite
+8. run stabilization gate
+9. update canonical memory
+10. stop
+```
+
+Do not use Dental Quote as a generic QA harness.
+
+Dental is reserved for final Golden Path proof after the internal stabilization gate passes.
+
+## 23. Mandatory token-saver decision check
+
+Before any additional read, tool call, test or code change, ask:
+
+> **Will this materially change the decision, implementation or verification?**
+
+If no: **skip it**.
+
+Before new code:
+
+> **Can existing code/config/test be reused or extended?**
+
+If yes: **reuse it**.
+
+Before a broad test:
+
+> **Has the focused test passed after the last relevant change?**
+
+If no: **run focused first**.
+
+Before a long report:
+
+> **Can the same decision be communicated with evidence in fewer words?**
+
+If yes: **compress it**.
+
+## 24. Quality floor
+
+Token saving must never mean:
+
+- skipping required tests;
+- hiding uncertainty;
+- claiming unexecuted PASS;
+- weakening security;
+- omitting material regressions;
+- bypassing governance;
+- accepting a symptom fix when the root cause is known;
+- silently changing product requirements.
+
+The objective is:
+
+> **less waste, not less rigor**
+
+## 25. Permanent mandate clause
+
+For all present and future Codex interventions on ForgeLab code produced or maintained through this ChatGPT workflow:
+
+> **Use the smallest amount of context, tool activity, code change and output necessary to produce a verified, complete, root-cause-level result. Reuse current evidence before generating new evidence. Prefer targeted search and focused tests over full-repository rereads and full-suite reruns. Expand only when a concrete unresolved uncertainty justifies the additional cost. Stop immediately when the requested result is proven or when a real approval/environment blocker is reached. Never trade correctness, security, product value or truthful evidence for token reduction.**
+
+This mandate remains active until the Product Owner explicitly supersedes it.
+
+---
+
+**END — AGENTS_MASTER.md v2.2**
