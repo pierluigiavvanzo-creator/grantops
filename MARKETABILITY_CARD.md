@@ -75,3 +75,36 @@ Complete the source/PDF -> candidate obligations -> human review -> verified wor
 
 ## Commercial discipline
 Do not let auth, billing, tenant architecture or platform breadth become the primary roadmap until the core operator workflow and buyer value are demonstrated strongly enough to justify productionization.
+
+---
+
+## 2026-10-01 live commercial evidence update
+
+A bounded outreach pilot is already in market.
+
+Observed state at the 2026-10-01 review:
+- 9 project/organisation outreach conversations are being monitored;
+- machine prospect discovery had previously passed 9/9 on the exploratory sample;
+- one automated support-ticket acknowledgement was received for COMPASS / King's College London;
+- **zero substantive human replies are canonically observed at this checkpoint**;
+- no demo acceptance, document-sharing commitment, paid pilot, LOI or purchase exists yet.
+
+Interpretation:
+- the discovery/data-acquisition hypothesis has evidence;
+- the buyer/problem/willingness-to-pay hypothesis remains `C0`;
+- the automated ticket is routing evidence, not solution or transaction evidence.
+
+### Updated next commercial evidence
+
+`GRANTOPS_C1_SUBSTANTIVE_REPLY_AND_DISCOVERY`
+
+The next useful signal is a substantive conversation with a relevant coordinator/research-support/grant-operations actor that clarifies:
+- whether the pain is real and material;
+- who owns the job and budget;
+- current workflow/alternative;
+- whether a project-specific preview is worth evaluating.
+
+Until that signal exists, do not make broad SaaS expansion the primary roadmap.
+
+If the current bounded outreach pilot produces no substantive response after its observation period, treat that result as evidence about the **ICP/channel/message combination**, not automatically as proof that the product problem does not exist. Revise the commercial hypothesis before building more product.
+
