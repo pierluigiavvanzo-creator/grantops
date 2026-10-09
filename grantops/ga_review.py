@@ -998,3 +998,352 @@ def _candidate_select_sql(where_sql):
               gcc.blocking_reasons_json,
               gcc.warnings_json,
               gcc.duplicate_of_candidate_id,
+              gcc.relation_type
+              FROM ga_candidates c
+              LEFT JOIN ga_candidate_context gcc ON gcc.candidate_id=c.id
+              WHERE {where_sql}"""
+
+
+def list_candidates(db_path, project_id, extraction_id=None, review_status=None, record_type=None):
+    ensure_schema(db_path)
+    refresh_context_for_project(db_path, project_id)
+    clauses = ["c.project_id=?"]
+    params = [project_id]
+    if extraction_id is not None:
+        clauses.append("c.extraction_id=?")
+        params.append(extraction_id)
+    if review_status and review_status != "ALL":
+        clauses.append("c.review_status=?")
+        params.append(review_status)
+    if record_type and record_type != "ALL":
+        clauses.append("c.record_type=?")
+        params.append(record_type)
+
+    sql = _candidate_select_sql(" AND ".join(clauses)) + " ORDER BY c.source_page, c.id"
+    with connect(db_path) as con:
+        return [dict(row) for row in con.execute(sql, params)]
+
+
+def get_candidate(db_path, candidate_id):
+    ensure_schema(db_path)
+    with connect(db_path) as con:
+        row = con.execute(_candidate_select_sql("c.id=?"), (candidate_id,)).fetchone()
+        return dict(row) if row else None
+
+
+def page_text(db_path, extraction_id, page_number):
+    ensure_schema(db_path)
+    with connect(db_path) as con:
+        row = con.execute(
+            """SELECT * FROM ga_pages
+               WHERE extraction_id=? AND page_number=?""",
+            (extraction_id, page_number),
+        ).fetchone()
+        return dict(row) if row else None
+
+def _title_for_candidate(candidate):
+    subject = candidate["candidate_subject"].strip()
+    action = candidate["candidate_action"].strip()
+
+    if candidate["record_type"] in {"DELIVERABLE", "MILESTONE"}:
+        return f"{subject} — {action}".strip(" —")[:220]
+    if candidate["record_type"] == "REPORTING_PERIOD":
+        trigger = candidate.get("candidate_trigger_or_due")
+        return f"{subject} — {trigger}" if trigger else subject
+    if candidate["record_type"] == "EVIDENCE_REQUIREMENT":
+        return f"Evidence retention — {action}"[:220]
+    return action[:220] if action else subject[:220]
+
+def _description_for_candidate(candidate):
+    parts = [
+        "Promoted from Grant Agreement review queue.",
+        f"Candidate subject: {candidate['candidate_subject']}.",
+    ]
+    trigger = candidate.get("trigger_text") or candidate.get("candidate_trigger_or_due")
+    if trigger:
+        parts.append(
+            f"Source expresses applicability/trigger as {trigger}; "
+            "GrantOps has not converted it into an absolute date."
+        )
+    if candidate.get("applicability"):
+        parts.append(f"Applicability: {candidate['applicability']}.")
+    parts.append(f"Detection rule: {candidate['rule_id']}.")
+    return " ".join(parts)
+
+def review_candidate(
+    db_path,
+    candidate_id,
+    decision,
+    reviewer,
+    source_page_verified,
+    source_quote_verified,
+    source_text_sha256_verified,
+    notes="",
+):
+    ensure_schema(db_path)
+    decision = decision.strip().upper()
+    reviewer = reviewer.strip()
+
+    if decision not in {"APPROVE", "REJECT", "NEEDS_CLARIFICATION"}:
+        raise ValueError("INVALID_REVIEW_DECISION")
+    if not reviewer:
+        raise ValueError("REVIEWER_REQUIRED")
+
+    with connect(db_path) as con:
+        row = con.execute(
+            _candidate_select_sql("c.id=?"),
+            (candidate_id,),
+        ).fetchone()
+        if not row:
+            raise ValueError("CANDIDATE_NOT_FOUND")
+        candidate = dict(row)
+
+        if candidate["review_status"] in {"APPROVED", "REJECTED"}:
+            raise ValueError("CANDIDATE_ALREADY_FINALIZED")
+
+        expected_hash = _candidate_hash(candidate)
+        if expected_hash != candidate["candidate_sha256"]:
+            raise ValueError("CANDIDATE_INTEGRITY_MISMATCH")
+
+        page = con.execute(
+            """SELECT * FROM ga_pages
+               WHERE extraction_id=? AND page_number=?""",
+            (candidate["extraction_id"], candidate["source_page"]),
+        ).fetchone()
+        if not page:
+            raise ValueError("SOURCE_PAGE_NOT_FOUND")
+
+        page = dict(page)
+        actual_page_sha = _sha256_text(page["text"])
+        if actual_page_sha != page["text_sha256"]:
+            raise ValueError("SOURCE_PAGE_HASH_MISMATCH")
+        if candidate["source_text_sha256"] != page["text_sha256"]:
+            raise ValueError("CANDIDATE_SOURCE_HASH_MISMATCH")
+        if candidate["source_quote"] not in page["text"]:
+            raise ValueError("SOURCE_QUOTE_NOT_FOUND_ON_PAGE")
+
+        if decision == "APPROVE":
+            if candidate.get("promotable") != 1:
+                status = candidate.get("context_status") or "CONTEXT_NOT_ANALYZED"
+                raise ValueError(f"CANDIDATE_NOT_PROMOTABLE_{status}")
+            if candidate.get("duplicate_of_candidate_id"):
+                raise ValueError("CANDIDATE_REQUIRES_MERGE")
+            if not (
+                source_page_verified
+                and source_quote_verified
+                and source_text_sha256_verified
+            ):
+                raise ValueError("APPROVAL_REQUIRES_FULL_SOURCE_VERIFICATION")
+
+            title = _title_for_candidate(candidate)
+            description = _description_for_candidate(candidate)
+
+            existing_promoted_id = candidate.get("promoted_record_id")
+
+            if existing_promoted_id is not None:
+                existing_record_row = con.execute(
+                    """SELECT * FROM obligations
+                       WHERE id=? AND project_id=?""",
+                    (existing_promoted_id, candidate["project_id"]),
+                ).fetchone()
+                if not existing_record_row:
+                    raise ValueError("PROMOTED_RECORD_NOT_FOUND")
+
+                existing_record = dict(existing_record_row)
+                restore_status = existing_record["status"]
+
+                # A v0.4.2 reopen deliberately blocks and unverifies the
+                # operational record. On re-approval, restore the exact
+                # pre-reopen status from the immutable human change event.
+                change_table = con.execute(
+                    """SELECT 1 FROM sqlite_master
+                       WHERE type='table' AND name='human_change_events'"""
+                ).fetchone()
+                reopen_event = None
+                if change_table:
+                    reopen_event = con.execute(
+                        """SELECT * FROM human_change_events
+                           WHERE project_id=?
+                             AND entity_type='GA_CANDIDATE'
+                             AND entity_id=?
+                             AND action='CANDIDATE_REOPEN'
+                           ORDER BY id DESC LIMIT 1""",
+                        (candidate["project_id"], candidate_id),
+                    ).fetchone()
+
+                before_reapprove = {
+                    "candidate": {
+                        "review_status": candidate["review_status"],
+                        "reviewer": candidate.get("reviewer"),
+                        "reviewed_at": candidate.get("reviewed_at"),
+                        "review_notes": candidate.get("review_notes"),
+                        "promoted_record_id": existing_promoted_id,
+                    },
+                    "record": {
+                        "id": existing_record["id"],
+                        "status": existing_record["status"],
+                        "verification_status": existing_record["verification_status"],
+                    },
+                }
+
+                if reopen_event:
+                    try:
+                        reopen_before = json.loads(reopen_event["before_json"])
+                        prior = reopen_before.get("record") or {}
+                        if prior.get("status"):
+                            restore_status = prior["status"]
+                    except Exception:
+                        pass
+
+                con.execute(
+                    """UPDATE obligations
+                       SET verification_status='HUMAN_VERIFIED',
+                           status=?
+                       WHERE id=?""",
+                    (restore_status, existing_promoted_id),
+                )
+                promoted_id = existing_promoted_id
+
+                con.execute(
+                    """UPDATE ga_candidates
+                       SET review_status='APPROVED',reviewer=?,reviewed_at=?,
+                           review_notes=?
+                       WHERE id=?""",
+                    (reviewer, now(), notes or None, candidate_id),
+                )
+
+                after_record = dict(con.execute(
+                    "SELECT * FROM obligations WHERE id=?",
+                    (promoted_id,),
+                ).fetchone())
+                after_candidate = dict(con.execute(
+                    "SELECT * FROM ga_candidates WHERE id=?",
+                    (candidate_id,),
+                ).fetchone())
+
+                if change_table:
+                    con.execute(
+                        """INSERT INTO human_change_events(
+                           project_id,entity_type,entity_id,action,actor,reason,
+                           before_json,after_json,source_integrity_json,
+                           requires_graph_rebuild,created_at
+                           ) VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
+                        (
+                            candidate["project_id"],
+                            "GA_CANDIDATE",
+                            candidate_id,
+                            "CANDIDATE_REAPPROVED",
+                            reviewer,
+                            notes or "Re-approved after human review.",
+                            json.dumps(before_reapprove, sort_keys=True, ensure_ascii=False),
+                            json.dumps({
+                                "candidate": {
+                                    "review_status": after_candidate["review_status"],
+                                    "reviewer": after_candidate["reviewer"],
+                                    "reviewed_at": after_candidate["reviewed_at"],
+                                    "review_notes": after_candidate["review_notes"],
+                                    "promoted_record_id": after_candidate["promoted_record_id"],
+                                },
+                                "record": {
+                                    "id": after_record["id"],
+                                    "status": after_record["status"],
+                                    "verification_status": after_record["verification_status"],
+                                },
+                            }, sort_keys=True, ensure_ascii=False),
+                            json.dumps({
+                                "candidate_integrity_verified": True,
+                                "source_page_verified": True,
+                                "source_quote_verified": True,
+                                "source_text_sha256_verified": True,
+                                "reused_promoted_record": True,
+                            }, sort_keys=True, ensure_ascii=False),
+                            1,
+                            now(),
+                        ),
+                    )
+
+                audit(
+                    con,
+                    candidate["project_id"],
+                    "GA_CANDIDATE_REAPPROVED_REVERIFIED",
+                    f"candidate_id={candidate_id}; reused_record_id={promoted_id}; reviewer={reviewer}",
+                    "OBLIGATION",
+                    promoted_id,
+                )
+                return {
+                    "status": "APPROVED",
+                    "promoted_record_id": promoted_id,
+                    "reviewer": reviewer,
+                    "reused_promoted_record": True,
+                }
+
+            cur = con.execute(
+                """INSERT INTO obligations(
+                   project_id,record_type,title,description,due_date,owner,status,
+                   verification_status,source_page,source_section,source_quote,
+                   source_text_sha256,created_at
+                   ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (
+                    candidate["project_id"],
+                    candidate["record_type"],
+                    title,
+                    description,
+                    None,
+                    None,
+                    "OPEN",
+                    "HUMAN_VERIFIED",
+                    str(candidate["source_page"]),
+                    " · ".join(x for x in [
+                        "Grant Agreement",
+                        candidate.get("source_article"),
+                        candidate.get("source_heading"),
+                        candidate["rule_id"],
+                    ] if x),
+                    candidate.get("context_quote") or candidate["source_quote"],
+                    candidate["source_text_sha256"],
+                    now(),
+                ),
+            )
+            promoted_id = cur.lastrowid
+            con.execute(
+                """UPDATE ga_candidates
+                   SET review_status='APPROVED',reviewer=?,reviewed_at=?,
+                       review_notes=?,promoted_record_id=?
+                   WHERE id=?""",
+                (reviewer, now(), notes or None, promoted_id, candidate_id),
+            )
+            audit(
+                con,
+                candidate["project_id"],
+                "GA_CANDIDATE_APPROVED_AND_PROMOTED",
+                f"candidate_id={candidate_id}; record_id={promoted_id}; reviewer={reviewer}",
+                "OBLIGATION",
+                promoted_id,
+            )
+            return {
+                "status": "APPROVED",
+                "promoted_record_id": promoted_id,
+                "reviewer": reviewer,
+                "reused_promoted_record": False,
+            }
+
+        new_status = "REJECTED" if decision == "REJECT" else "NEEDS_CLARIFICATION"
+        con.execute(
+            """UPDATE ga_candidates
+               SET review_status=?,reviewer=?,reviewed_at=?,review_notes=?
+               WHERE id=?""",
+            (new_status, reviewer, now(), notes or None, candidate_id),
+        )
+        audit(
+            con,
+            candidate["project_id"],
+            f"GA_CANDIDATE_{new_status}",
+            f"candidate_id={candidate_id}; reviewer={reviewer}",
+            "GA_CANDIDATE",
+            candidate_id,
+        )
+        return {
+            "status": new_status,
+            "promoted_record_id": None,
+            "reviewer": reviewer,
+        }
