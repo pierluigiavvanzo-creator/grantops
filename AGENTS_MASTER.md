@@ -1,3 +1,4 @@
+<!-- GENERATED FROM pierluigiavvanzo-creator/governance-AGENTS_MASTER.md@6c798b4 | body-sha256:f5d1a60b842b96bb393e1f2f6d2a66ea3622b8387ebac4cb5a47098c85556b93 | DO NOT EDIT HERE: edit AGENTS_MASTER.md in pierluigiavvanzo-creator/governance-AGENTS_MASTER.md and run sync-governance.ps1 -->
 # AGENTS_MASTER.md — PROJECT & PRODUCT OPERATING SYSTEM v2
 
 **Version:** 2.2  

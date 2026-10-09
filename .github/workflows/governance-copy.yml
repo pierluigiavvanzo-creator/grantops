@@ -1,0 +1,23 @@
+name: governance-copy
+
+# Installed by sync from pierluigiavvanzo-creator/governance-AGENTS_MASTER.md: AGENTS_MASTER.md must not be edited here.
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: AGENTS_MASTER.md matches its generated header
+        run: |
+          declared=$(head -n1 AGENTS_MASTER.md | sed -n 's/.*body-sha256:\([0-9a-f]\{64\}\).*/\1/p')
+          actual=$(tail -n +2 AGENTS_MASTER.md | tr -d '\r' | sha256sum | cut -d' ' -f1)
+          if [ -z "$declared" ]; then
+            echo "::error::AGENTS_MASTER.md has no governance header"; exit 1
+          fi
+          if [ "$declared" != "$actual" ]; then
+            echo "::error::AGENTS_MASTER.md was edited here. Edit AGENTS_MASTER.md in pierluigiavvanzo-creator/governance-AGENTS_MASTER.md and run sync-governance.ps1"; exit 1
+          fi
+          echo "AGENTS_MASTER.md matches governance (body-sha256 $actual)"
