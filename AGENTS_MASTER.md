@@ -1,8 +1,9 @@
-<!-- GENERATED FROM pierluigiavvanzo-creator/governance-AGENTS_MASTER.md@6c798b4 | body-sha256:f5d1a60b842b96bb393e1f2f6d2a66ea3622b8387ebac4cb5a47098c85556b93 | DO NOT EDIT HERE: edit AGENTS_MASTER.md in pierluigiavvanzo-creator/governance-AGENTS_MASTER.md and run sync-governance.ps1 -->
+<!-- GENERATED FROM pierluigiavvanzo-creator/governance-AGENTS_MASTER.md@d36b666 | body-sha256:13043d04f2006e2c972a4d10b99ee6ac3d5fb585535ba778668e21134c880b98 | DO NOT EDIT HERE: edit AGENTS_MASTER.md in pierluigiavvanzo-creator/governance-AGENTS_MASTER.md and run sync-governance.ps1 -->
 # AGENTS_MASTER.md — PROJECT & PRODUCT OPERATING SYSTEM v2
 
-**Version:** 2.2  
-**Date:** 2026-10-08  
+**Version:** 2.3 — fast lane  
+**Date:** 2026-10-24  
+**Change in 2.3:** standing approvals replace routine Product Owner approvals; a short hard-gate list stays; IoT/device defaults added; lighter Marketability Card for prototypes.  
 **Scope:** common governance for all AI/software projects  
 **Owner:** Product Owner  
 **Status:** canonical shared operating standard
@@ -109,9 +110,11 @@ Rules:
 
 ## 5. MARKETABILITY GATE — BEFORE MATERIAL BUILDING
 
-Before substantial A/B development, define or update the **Marketability Card**.
+**Prototypes and internal builds:** a 3-line mini card is enough — **ICP**, **pain**, **proof metric**. Unknown fields never block building; mark them UNKNOWN.
 
-Minimum fields:
+**Before commercial launch, paid pilots or customer commitments:** define or update the full **Marketability Card**.
+
+Full card fields:
 
 1. **ICP** — who specifically has the problem?
 2. **Pain** — what costly, frequent, risky or frustrating job exists today?
@@ -257,6 +260,8 @@ For MVP, experimentation and market validation, the default target is:
 
 unless the Product Owner has explicitly approved a paid dependency or spend.
 
+**Standing approval:** free-tier / free-plan usage that **cannot create a charge** (no payment method attached, no overage or auto top-up possible) is pre-approved. Agents may add, switch, qualify or drop such models and APIs without asking; record the provider check in DECISIONS and stop on quota.
+
 ### Sourcing order
 
 Before introducing a paid API, hosted model, token-metered service, data provider or external capability, search in this order when practical:
@@ -377,42 +382,64 @@ Paid external services are justified only when their measurable product/economic
 
 ---
 
-## 9. TENSION #1 — AUTONOMY VS GIT / HUMAN GATES
+## 9. AUTONOMY ENVELOPE — STANDING APPROVALS AND HARD GATES
 
-Agents should be autonomous **inside a bounded authorization envelope**.
+Agents are autonomous inside the envelope below. They **report afterwards; they do not ask**.
 
-### DEFAULT AUTONOMOUS ACTIONS
-When project rules permit, agents may autonomously:
+### STANDING APPROVALS — act without asking
 
-- inspect source, docs, tests and history;
-- search for reusable components;
-- create an isolated working branch;
-- make bounded code/documentation changes;
-- run tests, linters and local diagnostics;
-- repair failures caused by their own bounded change;
-- perform smoke tests;
-- update project state and handover;
-- create commits on the isolated working branch when the task authorization includes repository modification.
+Agents may, without Product Owner approval:
 
-### HUMAN GATES
-Explicit Product Owner approval is required before actions that are materially irreversible, external, risky or economic, including by default:
+- inspect source, docs, tests and history; search for reusable components;
+- create branches, new files, modules and project scaffolding inside the project repository;
+- make code, configuration and documentation changes; run tests, linters, diagnostics, smoke and end-to-end runs;
+- repair failures, retry within the Token Saver limits, and update project state, decisions and handover;
+- **merge their own pull request into the default branch** when all of these hold:
+  1. the full test suite passes;
+  2. CI passes;
+  3. for changes to runtime behavior, one end-to-end smoke of the affected workflow passes;
+  4. the change touches no hard gate below;
+  5. DECISIONS/handover record the change and the revert command;
+  then merge with a normal merge commit (never force) and verify the default branch;
+- add open-source dependencies with permissive licenses (MIT, BSD, Apache-2.0, ISC, PSF, MPL-2.0), pinned to exact versions in the project's dependency file, after a basic check (maintained, no known critical vulnerability); record them in DECISIONS;
+- use free-tier / free-plan models and APIs that cannot create charges (section 8A);
+- take architecture and stack decisions inside a **new** project or module, recorded as an ADR;
+- create new **private** repositories for new projects under the Product Owner's account;
+- run local services, brokers and device simulators bound to loopback/private development networks;
+- use synthetic or anonymized data, including with approved cloud models.
 
-- merge to protected/main production branch;
-- production deployment or destructive migration;
-- force-push or history rewrite;
-- meaningful architecture/objective change;
-- new paid service or material spend;
-- external submission/communication with legal or contractual effect;
-- access/use of sensitive personal data beyond already-approved scope;
-- new privacy/legal risk boundary;
-- deletion of valuable data or irreversible resource destruction;
-- commercialization commitments not already authorized.
+### HARD GATES — always ask
+
+Ask before acting, stating the problem, the options and the consequences:
+
+1. **Money** — any paid plan, credits, billing data, auto top-up, or action that can create a charge (section 8A).
+2. **Irreversible** — force-push, history rewrite, deleting repositories, unmerged branches, data or backups; destructive migrations on real data.
+3. **Real world** — deployment to production or to real users; commands that act on real devices or actuators; firmware/OTA updates to real devices; exposing services beyond loopback/private networks.
+4. **Real data** — real personal, health or patient data; real credentials and secrets; sending non-synthetic customer data to cloud models; any new privacy/legal boundary.
+5. **External effect** — communications, publications, submissions or commitments with legal or commercial effect; making a private repository public.
+6. **The box itself** — changes to this document, to a project's hard gates, to licenses outside the permissive list, or to security policies that widen access; architecture changes of a product already in use.
+
+Everything not listed under hard gates is inside the envelope.
+
+### NOTIFY, DON'T ASK
+
+After any standing-approval action, the next execution report states what was done, the evidence and how to revert it. Silence is never approval for a hard gate.
 
 ### PRINCIPLE
 
 > **Autonomous within the box; human approval to change the box.**
 
-Do not interrupt the Product Owner for routine execution choices that remain inside the approved envelope.
+Do not interrupt the Product Owner for anything inside the envelope.
+
+---
+
+## 9A. IoT AND DEVICE PROJECTS — SAFE DEFAULTS
+
+- Build and test against **device simulators** first; real hardware only through hard gate 3.
+- Brokers and services used by tests bind to loopback; no inbound exposure.
+- Credentials are never in code, repositories, prompts or logs; the application reads them at runtime from the environment or an OS secret store; tests use fake credentials.
+- Separate the device protocol layer (adapter) from business logic, so simulators and real devices are interchangeable.
+- Commands that move, heat, open, lock or power physical equipment are treated as real-world actions even in staging.
 
 ---
 
@@ -536,12 +563,7 @@ Conditions:
 Action: **agent executes autonomously inside bounded attempts with automatic stop and report**.
 
 ### LEVEL H — HUMAN-GATED
-Conditions:
-- irreversible or destructive;
-- legal/privacy-sensitive;
-- material spend;
-- external commitment;
-- insufficient recovery path.
+Conditions: the hard gates of section 9 (money, irreversible, real world, real data, external effect, the box itself).
 
 Action: **agent prepares and validates; human approves the gate; agent executes the approved action**.
 
@@ -820,15 +842,9 @@ Only material unresolved blockers, uncertainty or required gate.
 ### NEXT STEP
 One highest-value action, preferably executable without unnecessary Product Owner work.
 
-For material work also record:
+For material work also record, in one line each: class A/B/C/D; tests and real-workflow validation; standing approvals used (with revert command); hard gate requested, if any.
 
-- Class: A/B/C/D
-- Commercial evidence level: C0–C6
-- Reuse status
-- Tests run
-- Real workflow validation
-- Market KPI affected
-- Authorization/gate status
+Keep the default report short: ten lines or fewer unless a hard gate needs explanation.
 
 ---
 
@@ -1274,7 +1290,7 @@ Then report and stop.
 
 Stop when:
 
-- Product Owner approval is required;
+- a hard gate of section 9 is reached;
 - required environment is unavailable;
 - external condition cannot be verified;
 - repair would cross architecture/security/cost boundary;
